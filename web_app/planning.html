@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Light-delivery Planning</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/workflow.css?v=6" />
+  </head>
+  <body>
+    <nav class="top-nav" aria-label="Application pages">
+      <a class="nav-brand" href="/">MCVM Optical Planning</a>
+      <div class="nav-tabs">
+        <a href="/">Realtime Simulation</a>
+        <a class="active" href="/planning.html">Light-delivery Planning</a>
+        <a href="/verification.html">MCVM Verification</a>
+      </div>
+    </nav>
+
+    <main class="workflow-page planning-page">
+      <header class="workflow-hero planning-hero">
+        <div>
+          <span class="eyebrow">REAL-TIME OPTICAL DOSE PLANNING</span>
+          <h1>Target-aware source screening</h1>
+          <p>Define the ROI, screen source configurations and inspect the selected Pareto-optimal plan.</p>
+        </div>
+        <div class="hero-stat"><strong id="deviceText">-</strong><span>Inference device</span></div>
+      </header>
+
+      <details class="workflow-card planning-setup-disclosure">
+        <summary>
+          <span><strong>Model and tissue</strong><small id="inspectText">Load a compatible weight file and 3D tissue label volume.</small></span>
+          <span>Configure</span>
+        </summary>
+        <div class="file-config-grid compact-file-config">
+          <label class="wide-field"><span>Weight file</span><input id="modelPath" type="text" spellcheck="false" /></label>
+          <button id="uploadModelBtn" class="secondary-btn" type="button">Upload</button>
+          <label class="wide-field"><span>Tissue file</span><input id="tissuePath" type="text" spellcheck="false" /></label>
+          <button id="uploadTissueBtn" class="secondary-btn" type="button">Upload</button>
+          <label><span>Channels</span><input id="numChannels" type="number" min="1" step="1" value="17" /></label>
+          <button id="loadTissueBtn" class="primary-btn compact-btn" type="button">Load tissue</button>
+        </div>
+        <input id="modelFileInput" type="file" accept=".pth,.pt" hidden />
+        <input id="tissueFileInput" type="file" accept=".npz" hidden />
+      </details>
+
+      <div class="planning-workspace-grid">
+        <section class="workflow-card compact-roi-card">
+          <div class="section-heading compact-heading">
+            <div><span class="step-number">1</span><h2>Target ROI</h2></div>
+            <p>Click any slice to reposition the ellipsoidal target.</p>
+          </div>
+          <div class="roi-layout compact-roi-layout">
+            <div class="roi-views compact-roi-views">
+              <article class="slice-card">
+                <header><strong>Sagittal / X</strong><span id="roiXLabel">X -</span></header>
+                <canvas id="roiCanvasX" data-axis="x"></canvas>
+                <input id="roiSliceX" type="range" min="0" max="127" value="64" />
+              </article>
+              <article class="slice-card">
+                <header><strong>Coronal / Y</strong><span id="roiYLabel">Y -</span></header>
+                <canvas id="roiCanvasY" data-axis="y"></canvas>
+                <input id="roiSliceY" type="range" min="0" max="127" value="64" />
+              </article>
+              <article class="slice-card">
+                <header><strong>Axial / Z</strong><span id="roiZLabel">Z -</span></header>
+                <canvas id="roiCanvasZ" data-axis="z"></canvas>
+                <input id="roiSliceZ" type="range" min="0" max="127" value="64" />
+              </article>
+            </div>
+            <aside class="roi-controls compact-roi-controls">
+              <h3>Center X / Y / Z</h3>
+              <div class="triple-fields">
+                <label><span>X</span><input id="centerX" type="number" min="0" value="75" /></label>
+                <label><span>Y</span><input id="centerY" type="number" min="0" value="65" /></label>
+                <label><span>Z</span><input id="centerZ" type="number" min="0" value="20" /></label>
+              </div>
+              <h3>Ellipsoid radii</h3>
+              <div class="radius-fields">
+                <label><span>Radius X</span><input id="radiusX" type="range" min="1" max="40" value="3" /><output id="radiusXValue">3</output></label>
+                <label><span>Radius Y</span><input id="radiusY" type="range" min="1" max="40" value="3" /><output id="radiusYValue">3</output></label>
+                <label><span>Radius Z</span><input id="radiusZ" type="range" min="1" max="40" value="3" /><output id="radiusZValue">3</output></label>
+              </div>
+              <div class="shallow-roi-tools">
+                <label><span>Shallow target</span><select id="targetLabels"><option value="">Current center label</option></select></label>
+                <div class="shallow-roi-actions">
+                  <button id="suggestRoiBtn" class="secondary-btn" type="button">Suggest shallow</button>
+                  <button id="demoRoiBtn" class="secondary-btn" type="button">ScatterBrains preset</button>
+                </div>
+                <div class="roi-depth-grid" aria-label="ROI surface depth">
+                  <span>Center depth<strong id="roiDepthText">-</strong></span>
+                  <span>Cover depth<strong id="roiCoverText">-</strong></span>
+                  <span>Tissue<strong id="roiTissueFraction">-</strong></span>
+                  <span>Target<strong id="roiTargetFraction">-</strong></span>
+                </div>
+              </div>
+              <div class="roi-summary compact-roi-summary">
+                <span>Volume</span><strong id="roiVolumeText">-</strong>
+                <span>Center</span><strong id="roiCenterText">-</strong>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="workflow-card screening-card compact-screening-card">
+          <div class="section-heading compact-heading">
+            <div><span class="step-number">2</span><h2>Candidate screening</h2></div>
+            <p>Balance efficacy and safety objectives.</p>
+          </div>
+          <div class="screening-controls compact-screening-controls">
+            <label><span>Surface positions</span><input id="positionCount" type="number" min="4" max="64" value="8" /></label>
+            <label><span>Directions / position</span><input id="directionCount" type="number" min="1" max="5" value="2" /></label>
+            <label><span>Target weight</span><input id="targetWeight" type="number" min="0" step="0.05" value="0.7" /></label>
+            <label><span>Off-target weight</span><input id="offWeight" type="number" min="0" step="0.05" value="0.2" /></label>
+            <label><span>Hotspot weight</span><input id="hotspotWeight" type="number" min="0" step="0.05" value="0.1" /></label>
+          </div>
+          <div class="screening-actions">
+            <button id="runPlanBtn" type="button" class="primary-btn">Screen candidates</button>
+            <button id="rerankBtn" type="button" class="secondary-btn" disabled>Apply weights</button>
+          </div>
+          <details class="source-prior-details">
+            <summary><span>Local surface prior</span><small id="samplingSummary">Auto patch · outer shell · ≤60°</small></summary>
+            <div class="source-prior-grid">
+              <label><span>Patch radius (vox)</span><input id="patchRadius" type="number" min="4" max="40" step="1" placeholder="Auto" /></label>
+              <label><span>Surface label</span><select id="surfaceLabel"><option value="auto">Auto outer shell</option></select></label>
+              <label><span>Max incidence (°)</span><input id="maxIncidence" type="number" min="1" max="90" step="1" value="60" /></label>
+            </div>
+          </details>
+          <div class="job-status compact-planning-status">
+            <div><strong id="planStatus">Ready</strong><span id="planDetail">Define an ROI and start screening.</span></div>
+            <progress id="planProgress" max="1" value="0"></progress>
+          </div>
+        </section>
+      </div>
+
+      <section id="planningResults" class="planning-results-dashboard" hidden>
+        <article class="workflow-card result-card compact-analysis-card">
+          <div class="result-heading compact-heading"><div><span class="eyebrow">CANDIDATE GEOMETRY</span><h2>Sources and directions</h2></div><span id="candidateMeta">-</span></div>
+          <canvas id="candidateCanvas" class="analysis-canvas"></canvas>
+        </article>
+
+        <article class="workflow-card result-card compact-analysis-card">
+          <div class="result-heading compact-heading"><div><span class="eyebrow">PARETO SCREENING</span><h2>Target versus off-target</h2></div><span>Ideal ↖ · color shows hotspot</span></div>
+          <canvas id="paretoCanvas" class="analysis-canvas"></canvas>
+        </article>
+
+        <article class="workflow-card compact-ranked-card">
+          <div class="result-heading compact-heading"><div><span class="eyebrow">RANKED PLANS</span><h2>Top configurations</h2></div><span id="durationText">-</span></div>
+          <div class="table-wrap">
+            <table class="metrics-table compact-metrics-table">
+              <thead><tr><th>Rank</th><th>Candidate</th><th>Target</th><th>Off-target</th><th>Hotspot</th><th>Score</th><th>Pareto</th></tr></thead>
+              <tbody id="candidateRows"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="workflow-card compact-selected-card">
+          <div class="result-heading compact-heading"><div><span class="eyebrow">SELECTED PLAN</span><h2>Best absorption field</h2></div><a class="inline-link" href="/verification.html">Verify with MCVM →</a></div>
+          <div class="metric-cards compact-best-metrics" id="bestMetrics"></div>
+          <div class="best-slices compact-best-slices">
+            <article class="slice-card"><header><strong>Sagittal / X</strong><span id="bestXLabel">-</span></header><canvas id="bestCanvasX"></canvas><input id="bestSliceX" type="range" min="0" max="127" value="64" /></article>
+            <article class="slice-card"><header><strong>Coronal / Y</strong><span id="bestYLabel">-</span></header><canvas id="bestCanvasY"></canvas><input id="bestSliceY" type="range" min="0" max="127" value="64" /></article>
+            <article class="slice-card"><header><strong>Axial / Z</strong><span id="bestZLabel">-</span></header><canvas id="bestCanvasZ"></canvas><input id="bestSliceZ" type="range" min="0" max="127" value="64" /></article>
+          </div>
+        </article>
+      </section>
+    </main>
+    <script src="/planning.js?v=3"></script>
+  </body>
+</html>

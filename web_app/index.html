@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MCVM Realtime Simulation</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <nav class="top-nav" aria-label="Application pages">
+      <a class="nav-brand" href="/">MCVM Optical Planning</a>
+      <div class="nav-tabs">
+        <a class="active" href="/">Realtime Simulation</a>
+        <a href="/planning.html">Light-delivery Planning</a>
+        <a href="/verification.html">MCVM Verification</a>
+      </div>
+    </nav>
+    <main class="app-shell">
+      <aside class="sidebar" aria-label="Controls">
+        <div class="brand">
+          <h1>MCVM Realtime Simulation</h1>
+        </div>
+
+        <section class="panel">
+          <h2>Model & Tissue</h2>
+
+          <div class="path-block" data-kind="model">
+            <div class="path-title">
+              <span>Weight File</span>
+              <div>
+                <button id="pickModelBtn" type="button" class="tool-btn">Select File</button>
+                <button id="browseModelBtn" type="button" class="tool-btn">Browse</button>
+              </div>
+            </div>
+            <textarea id="modelPath" rows="2" spellcheck="false" data-kind="model"></textarea>
+            <p class="drop-hint">Drop a .pth / .pt file here, or paste a local path.</p>
+          </div>
+
+          <div class="path-block" data-kind="tissue">
+            <div class="path-title">
+              <span>Tissue File</span>
+              <div>
+                <button id="pickTissueBtn" type="button" class="tool-btn">Select File</button>
+                <button id="browseTissueBtn" type="button" class="tool-btn">Browse</button>
+              </div>
+            </div>
+            <textarea id="tissuePath" rows="2" spellcheck="false" data-kind="tissue"></textarea>
+            <p class="drop-hint">Drop a .npz file here, or paste a local path.</p>
+          </div>
+
+          <div class="field-row">
+            <label>
+              <span>Channels</span>
+              <input id="numChannels" type="number" min="1" step="1" value="17" />
+            </label>
+            <button id="inspectBtn" type="button" class="secondary-btn">Inspect</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Light Source</h2>
+
+          <div class="axis-group">
+            <div class="axis-row">
+              <label><span>X</span><input id="sourceX" type="number" step="0.1" /></label>
+              <input id="sourceXSlider" type="range" min="0" max="127" value="64" />
+            </div>
+            <div class="axis-row">
+              <label><span>Y</span><input id="sourceY" type="number" step="0.1" /></label>
+              <input id="sourceYSlider" type="range" min="0" max="127" value="64" />
+            </div>
+            <div class="axis-row">
+              <label><span>Z</span><input id="sourceZ" type="number" step="0.1" /></label>
+              <input id="sourceZSlider" type="range" min="0" max="127" value="64" />
+            </div>
+          </div>
+
+          <div class="section-line">
+            <h3>Direction</h3>
+            <div class="quick-buttons" aria-label="Direction presets">
+              <button type="button" data-dir="1,0,0">+X</button>
+              <button type="button" data-dir="-1,0,0">-X</button>
+              <button type="button" data-dir="0,1,0">+Y</button>
+              <button type="button" data-dir="0,-1,0">-Y</button>
+              <button type="button" data-dir="0,0,1">+Z</button>
+              <button type="button" data-dir="0,0,-1">-Z</button>
+            </div>
+          </div>
+
+          <div class="axis-group direction-group">
+            <div class="axis-row">
+              <label><span>dX</span><input id="dirX" type="number" step="0.01" /></label>
+              <input id="dirXSlider" type="range" min="-1" max="1" step="0.01" value="0" />
+            </div>
+            <div class="axis-row">
+              <label><span>dY</span><input id="dirY" type="number" step="0.01" /></label>
+              <input id="dirYSlider" type="range" min="-1" max="1" step="0.01" value="0" />
+            </div>
+            <div class="axis-row">
+              <label><span>dZ</span><input id="dirZ" type="number" step="0.01" /></label>
+              <input id="dirZSlider" type="range" min="-1" max="1" step="0.01" value="1" />
+            </div>
+          </div>
+
+          <button id="simulateBtn" type="button" class="primary-btn">Run Simulation</button>
+        </section>
+      </aside>
+
+      <section class="stage" aria-label="Simulation Results">
+        <header class="stage-header">
+          <div>
+            <h2>Orthogonal Slices</h2>
+            <p id="metaLine">Waiting for simulation input</p>
+          </div>
+          <div class="colorbar" aria-hidden="true">
+            <span>Low</span>
+            <div></div>
+            <span>High</span>
+          </div>
+        </header>
+
+        <div class="workbench">
+          <div class="views">
+            <article class="view-tile" data-axis="x">
+              <header><h3>Sagittal / X</h3><span id="xValue">-</span></header>
+              <canvas id="canvasX"></canvas>
+              <input id="sliderX" type="range" min="0" max="127" value="64" disabled />
+            </article>
+            <article class="view-tile" data-axis="y">
+              <header><h3>Coronal / Y</h3><span id="yValue">-</span></header>
+              <canvas id="canvasY"></canvas>
+              <input id="sliderY" type="range" min="0" max="127" value="64" disabled />
+            </article>
+            <article class="view-tile" data-axis="z">
+              <header><h3>Axial / Z</h3><span id="zValue">-</span></header>
+              <canvas id="canvasZ"></canvas>
+              <input id="sliderZ" type="range" min="0" max="127" value="64" disabled />
+            </article>
+          </div>
+
+          <article class="source-picker">
+            <header>
+              <div>
+                <h3>3D Source Picker</h3>
+                <span id="pickerMeta">Preview pending</span>
+              </div>
+              <button id="resetViewBtn" type="button" class="tool-btn">Reset View</button>
+            </header>
+            <canvas id="tissueCanvas" title="Rotate and select a surface point"></canvas>
+            <footer>
+              <span id="pickerSourceText">Source -</span>
+              <button id="aimCenterBtn" type="button" class="secondary-btn">Aim Center</button>
+            </footer>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <div id="browserModal" class="modal" hidden>
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <header>
+          <div>
+            <h2 id="modalTitle">Browse Directory</h2>
+            <p id="modalPath">-</p>
+          </div>
+          <button id="closeModalBtn" type="button" class="icon-btn" aria-label="Close">x</button>
+        </header>
+        <div class="modal-controls">
+          <input id="modalPathInput" type="text" spellcheck="false" />
+          <button id="goPathBtn" type="button" class="secondary-btn">Open</button>
+        </div>
+        <div id="fileList" class="file-list"></div>
+      </div>
+    </div>
+
+    <input id="modelFileInput" type="file" accept=".pth,.pt" hidden />
+    <input id="tissueFileInput" type="file" accept=".npz" hidden />
+    <script src="/app.js?v=webgl-cyan-edges"></script>
+  </body>
+</html>

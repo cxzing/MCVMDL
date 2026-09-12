@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MCVM Verification</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/workflow.css?v=5" />
+  </head>
+  <body>
+    <nav class="top-nav" aria-label="Application pages">
+      <a class="nav-brand" href="/">MCVM Optical Planning</a>
+      <div class="nav-tabs">
+        <a href="/">Realtime Simulation</a>
+        <a href="/planning.html">Light-delivery Planning</a>
+        <a class="active" href="/verification.html">MCVM Verification</a>
+      </div>
+    </nav>
+
+    <main class="workflow-page verification-page">
+      <header class="workflow-hero verification-hero">
+        <div>
+          <span class="eyebrow">MONTE CARLO REFERENCE CHECK</span>
+          <h1>MCVM verification</h1>
+          <p>Run MCVM directly on the selected tissue grid and compare it with the real-time model.</p>
+        </div>
+        <div class="hero-stat"><strong id="mcvmPathText">-</strong><span>Verification engine</span></div>
+      </header>
+
+      <section class="workflow-card verification-setup-card">
+        <div class="result-heading compact-heading">
+          <div><span class="eyebrow">VERIFICATION INPUT</span><h2>Plan, source and precision</h2></div>
+          <span>Advanced optical settings stay collapsed until needed.</span>
+        </div>
+
+        <div class="training-fidelity-banner">
+          <strong>MCVM verification</strong>
+          <span>MCVM v2 runs on the selected tissue using the voxel size and optical properties below. Its absorption field is compared directly with the model grid without spatial resampling.</span>
+        </div>
+
+        <div class="verification-setup-row">
+          <label class="compact-field"><span>Completed plan</span><select id="planSelect"></select></label>
+          <label class="compact-field"><span>Source input</span><select id="sourceMode"><option value="planned">Planned best source</option><option value="manual">Manual coordinates</option></select></label>
+          <label class="compact-field"><span>Photon count</span><select id="photonPreset"><option value="100000">10^5 · Quick</option><option value="1000000">10^6 · Medium</option><option value="10000000">10^7 · Publication</option></select></label>
+          <label class="compact-check"><input id="retainRaw" type="checkbox" /><span>Retain raw outputs</span></label>
+        </div>
+
+        <div id="plannedSourceSummary" class="source-summary"></div>
+        <div id="manualSourceFields" class="manual-source-grid" hidden>
+          <div class="coordinate-editor">
+            <strong>Source X / Y / Z</strong>
+            <div class="triple-fields">
+              <input id="manualSourceX" aria-label="Manual source X" type="number" step="0.1" />
+              <input id="manualSourceY" aria-label="Manual source Y" type="number" step="0.1" />
+              <input id="manualSourceZ" aria-label="Manual source Z" type="number" step="0.1" />
+            </div>
+          </div>
+          <div class="coordinate-editor">
+            <strong>Aim X / Y / Z</strong>
+            <div class="triple-fields">
+              <input id="manualAimX" aria-label="Manual aim X" type="number" step="0.1" />
+              <input id="manualAimY" aria-label="Manual aim Y" type="number" step="0.1" />
+              <input id="manualAimZ" aria-label="Manual aim Z" type="number" step="0.1" />
+            </div>
+          </div>
+          <div class="direction-preview"><span>Calculated direction</span><strong id="manualDirectionText">-</strong></div>
+        </div>
+
+        <div class="config-disclosures">
+          <details class="config-disclosure">
+            <summary><span><strong>Optical settings</strong><small>Configurable voxel grid, beam and tissue profile</small></span><span>Configure</span></summary>
+            <div class="verification-controls compact-controls">
+              <label><span>Voxel X (mm)</span><input id="voxelX" type="number" min="0.001" step="0.1" /></label>
+              <label><span>Voxel Y (mm)</span><input id="voxelY" type="number" min="0.001" step="0.1" /></label>
+              <label><span>Voxel Z (mm)</span><input id="voxelZ" type="number" min="0.001" step="0.1" /></label>
+              <label><span>Outside n</span><input id="outsideN" type="number" min="0.1" step="0.01" /></label>
+              <label><span>Beam radius (cm)</span><input id="beamRadius" type="number" min="0" step="0.001" /></label>
+              <label><span>Source profile</span><select id="beamProfile"><option value="top-hat">Top-hat</option><option value="gaussian">Gaussian</option></select></label>
+              <label><span>Fiber NA</span><input id="fiberNA" type="number" min="0" step="0.01" /></label>
+              <label><span>Noise threshold</span><input id="noiseThreshold" type="number" min="0" step="1e-9" /></label>
+            </div>
+            <div class="profile-toolbar compact-toolbar">
+              <button id="importProfileBtn" class="secondary-btn" type="button">Import JSON</button>
+              <button id="exportProfileBtn" class="secondary-btn" type="button">Export JSON</button>
+              <button id="resetProfileBtn" class="secondary-btn" type="button">Reset defaults</button>
+            </div>
+            <input id="profileFileInput" type="file" accept=".json,application/json" hidden />
+          </details>
+
+          <details class="config-disclosure" id="tissueDetails">
+            <summary><span><strong>Tissue optical properties</strong><small id="tissueSummaryText">No definitions loaded</small></span><span>Edit tissues</span></summary>
+            <div class="tissue-selector-row">
+              <label><span>Tissue definition</span><select id="tissueSelect"></select></label>
+              <button id="addTissueBtn" class="secondary-btn" type="button">Add</button>
+              <button id="deleteTissueBtn" class="secondary-btn danger-btn" type="button">Delete</button>
+            </div>
+            <div class="tissue-editor-grid">
+              <label><span>Label</span><input id="tissueLabel" type="number" min="1" step="1" /></label>
+              <label class="tissue-name-field"><span>Name</span><input id="tissueName" type="text" /></label>
+              <label><span>n</span><input id="tissueN" type="number" min="0.01" step="0.01" /></label>
+              <label><span>μa</span><input id="tissueMua" type="number" min="0" step="0.001" /></label>
+              <label><span>μs</span><input id="tissueMus" type="number" min="0" step="0.001" /></label>
+              <label><span>g</span><input id="tissueG" type="number" min="0" max="1" step="0.01" /></label>
+            </div>
+            <p class="tissue-presence" id="tissuePresenceText">-</p>
+          </details>
+        </div>
+
+        <div class="verification-run-row">
+          <button id="runMcvmBtn" class="primary-btn" type="button">Start MCVM verification</button>
+          <button id="cancelMcvmBtn" class="secondary-btn" type="button" disabled>Cancel</button>
+          <div class="job-status compact-job-status">
+            <div><strong id="jobStatus">Ready</strong><span id="jobDetail">Select a completed planning result.</span></div>
+            <progress id="jobProgress" max="1" value="0"></progress>
+          </div>
+        </div>
+      </section>
+
+      <section id="verificationResults" class="results-stack" hidden>
+        <article class="workflow-card compact-results-card">
+          <div class="result-heading compact-heading">
+            <div><span class="eyebrow">MODEL VS MCVM</span><h2>Quantitative and spatial verification</h2></div>
+            <span id="verificationDuration">-</span>
+          </div>
+          <div class="metric-cards compact-metrics" id="verificationMetrics"></div>
+          <div class="spatial-divider">
+            <strong>Single-view comparison</strong>
+            <span id="resultReferenceText">Model and MCVM share one color scale.</span>
+          </div>
+          <div class="axis-toolbar compact-axis-toolbar">
+            <button class="secondary-btn active" type="button" data-axis="x">Sagittal X</button>
+            <button class="secondary-btn" type="button" data-axis="y">Coronal Y</button>
+            <button class="secondary-btn" type="button" data-axis="z">Axial Z</button>
+            <input id="verificationSlice" type="range" min="0" max="127" value="64" />
+            <strong id="verificationSliceLabel">X 64</strong>
+          </div>
+          <div class="verification-viewer compact-verification-viewer">
+            <article class="slice-card"><header><strong>Real-time model</strong><span>Prediction</span></header><canvas id="modelCanvas"></canvas></article>
+            <article class="slice-card"><header><strong>High-fidelity MCVM</strong><span>Reference</span></header><canvas id="mcvmCanvas"></canvas></article>
+            <article class="slice-card"><header><strong>Difference</strong><span>Model − MCVM</span></header><canvas id="differenceCanvas"></canvas></article>
+          </div>
+        </article>
+      </section>
+    </main>
+    <script src="/verification.js?v=7"></script>
+  </body>
+</html>

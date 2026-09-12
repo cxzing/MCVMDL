@@ -1,0 +1,6 @@
+MCVM executable notice
+
+The bundled web_app/bin/MCVM.exe executable is a separate binary component.
+It is not licensed under the MIT License that covers the MCVMDL project code.
+Redistribution and use of the executable remain subject to the rights and terms
+provided by its original owner or distributor.
